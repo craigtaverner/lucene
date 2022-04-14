@@ -60,7 +60,7 @@ public class TestTriangulator extends LuceneTestCase {
     GeoPoint x = new GeoPoint(1, 1, 0, 0);
     GeoPoint y = new GeoPoint(1, 0, 1, 0);
     GeoPoint z = new GeoPoint(1, 0, 0, 1);
-    // Normal right hand ordering
+    // Normal right-hand ordering
     assertTrue("Expected CCW", Triangulator.isRightHandRule(x, y, z));
     assertTrue("Expected CCW", Triangulator.isRightHandRule(y, z, x));
     assertTrue("Expected CCW", Triangulator.isRightHandRule(z, x, y));
@@ -71,21 +71,21 @@ public class TestTriangulator extends LuceneTestCase {
   }
 
   public void testTriangleWindingOrderClockwise() {
-    double[] lats = new double[]{0.0, 2.0, 0.0, 0.0};
-    double[] lons = new double[]{-1.0, 0.0, 1.0, -1.0};
-    Polygon polygon = new Polygon(lats, lons);
+    double[] latitudes = new double[]{0.0, 2.0, 0.0, 0.0};
+    double[] longitudes = new double[]{-1.0, 0.0, 1.0, -1.0};
+    Polygon polygon = new Polygon(latitudes, longitudes);
     assertEquals(GeoUtils.WindingOrder.CCW, polygon.getWindingOrder());
-    ArrayList<GeoPoint> points = Geo3dTestUtil.latLonArrayToGeoPoints(lats, lons);
+    ArrayList<GeoPoint> points = Geo3dTestUtil.latLonArrayToGeoPoints(latitudes, longitudes);
     GeoUtils.WindingOrder direction = Triangulator.calculateWindingOrder(points);
     assertEquals(GeoUtils.WindingOrder.CW, direction);
   }
 
   public void testTriangleWindingOrderCounterClockwise() {
-    double[] lats = new double[]{0.0, 2.0, 0.0, 0.0};
-    double[] lons = new double[]{1.0, 0.0, -1.0, 1.0};
-    Polygon polygon = new Polygon(lats, lons);
+    double[] latitudes = new double[]{0.0, 2.0, 0.0, 0.0};
+    double[] longitudes = new double[]{1.0, 0.0, -1.0, 1.0};
+    Polygon polygon = new Polygon(latitudes, longitudes);
     assertEquals(GeoUtils.WindingOrder.CW, polygon.getWindingOrder());
-    ArrayList<GeoPoint> points = Geo3dTestUtil.latLonArrayToGeoPoints(lats, lons);
+    ArrayList<GeoPoint> points = Geo3dTestUtil.latLonArrayToGeoPoints(latitudes, longitudes);
     GeoUtils.WindingOrder direction = Triangulator.calculateWindingOrder(points);
     assertEquals(GeoUtils.WindingOrder.CCW, direction);
   }

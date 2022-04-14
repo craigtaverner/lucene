@@ -6,8 +6,9 @@ import org.apache.lucene.spatial3d.geom.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
-import static org.apache.lucene.geo.GeoUtils.*;
+import static org.apache.lucene.geo.GeoUtils.WindingOrder;
 
 public class Triangulator {
 
@@ -169,10 +170,7 @@ public class Triangulator {
   private static List<Triangle> earcutLinkedList(Node currEar, final List<Triangle> triangles) {
     State state = State.INIT;
     earcut:
-    do {
-      if (currEar == null || currEar.previous == currEar.next) {
-        return triangles;
-      }
+    while (currEar != null && currEar.previous != currEar.next) {
 
       Node stop = currEar;
       Node prevNode;
@@ -219,8 +217,7 @@ public class Triangulator {
               // as a last resort, try splitting the remaining polygon into two
               if (!splitEarcut(currEar, triangles)) {
                 // we could not process all points. Tessellation failed
-                throw new IllegalArgumentException(
-                    "Unable to Tessellate shape. Possible malformed shape detected.");
+                throw new IllegalArgumentException("Unable to Tessellate shape. Possible malformed shape detected.");
               }
               break;
           }
@@ -228,7 +225,7 @@ public class Triangulator {
         }
       } while (currEar.previous != currEar.next);
       break;
-    } while (true);
+    }
     // Return the calculated tessellation
     return triangles;
   }
@@ -262,7 +259,7 @@ public class Triangulator {
 
       // a self-intersection where edge (v[i-1],v[i]) intersects (v[i+1],v[i+2])
       if (!isVertexEquals(a, b)
-          && !isIntersectingPolygon(a, a.point, b.point)
+          && edgeNeverIntersectsPolygon(a, a.point, b.point)
           && linesIntersect(a.point, node.point, nextNode.point, b.point)
           && isLocallyInside(a, b)
           && isLocallyInside(b, a)) {
@@ -322,7 +319,6 @@ public class Triangulator {
     } while (searchNode != start);
     return false;
   }
-
 
   /**
    * Computes if edge defined by a and b overlaps with a polygon edge
@@ -472,7 +468,7 @@ public class Triangulator {
     }
     return a.next.idx != b.idx
         && a.previous.idx != b.idx
-        && !isIntersectingPolygon(a, a.point, b.point)
+        && edgeNeverIntersectsPolygon(a, a.point, b.point)
         && isLocallyInside(a, b)
         && isLocallyInside(b, a)
         && middleInsert(a, a.getX(), a.getY(), b.getX(), b.getY())
@@ -534,21 +530,21 @@ public class Triangulator {
   /**
    * Determines if the diagonal of a polygon is intersecting with any polygon elements.
    */
-  private static boolean isIntersectingPolygon(
+  private static boolean edgeNeverIntersectsPolygon(
       final Node start, final GeoPoint a, final GeoPoint b) {
     Node node = start;
     Node nextNode;
     do {
       nextNode = node.next;
-      if (isVertexEquals(node, a.x, a.y, a.z) == false && isVertexEquals(node, b.x, b.y, b.z) == false) {
+      if (!isVertexEquals(node, a.x, a.y, a.z) && !isVertexEquals(node, b.x, b.y, b.z)) {
         if (linesIntersect(node.point, nextNode.point, a, b)) {
-          return true;
+          return false;
         }
       }
       node = nextNode;
     } while (node != start);
 
-    return false;
+    return true;
   }
 
   /**
@@ -652,7 +648,7 @@ public class Triangulator {
   }
 
   /**
-   * Determines if two point vertices are equal. *
+   * Determines if two point vertices are equal.
    */
   private static boolean isVertexEquals(final Node a, final Node b) {
     return isVertexEquals(a, b.point.x, b.point.y, b.point.z);
@@ -663,13 +659,6 @@ public class Triangulator {
    */
   private static boolean isVertexEquals(final Node a, final double x, final double y, final double z) {
     return a.point.x == x && a.point.y == y && a.point.z == z;
-  }
-
-  /**
-   * Create vector from GeoPoint to GeoPoint
-   */
-  private static Vector delta(final GeoPoint a, final GeoPoint b) {
-    return new Vector(b.x - a.x, b.y - a.y, b.z - a.z);
   }
 
   /**
@@ -821,84 +810,21 @@ public class Triangulator {
     }
 
     /**
-     * get quantized x value for the given vertex
-     */
-    public int getEncodedX(int vertex) {
-      return this.vertex[vertex].x;
-    }
-
-    /**
-     * get quantized y value for the given vertex
-     */
-    public int getEncodedY(int vertex) {
-      return this.vertex[vertex].y;
-    }
-
-    /**
-     * get quantized y value for the given vertex
-     */
-    public int getEncodedZ(int vertex) {
-      return this.vertex[vertex].z;
-    }
-
-    /**
-     * get x value for the given vertex
-     */
-    public double getX(int vertex) {
-      return this.vertex[vertex].getX();
-    }
-
-    /**
-     * get y value for the given vertex
-     */
-    public double getY(int vertex) {
-      return this.vertex[vertex].getY();
-    }
-
-    /**
-     * get x value for the given vertex
-     */
-    public double getZ(int vertex) {
-      return this.vertex[vertex].getZ();
-    }
-
-    /**
-     * get if edge is shared with the polygon for the given edge
+     * Get if edge is shared with the polygon for the given edge.
+     * This is required by lucene for converting triangles to fields.
      */
     public boolean isEdgefromPolygon(int startVertex) {
       return edgeFromPolygon[startVertex];
     }
-
     /**
      * pretty print the triangle vertices
      */
     @Override
     public String toString() {
-      String result = vertex[0].x
-          + ", "
-          + vertex[0].y
-          + ", "
-          + vertex[0].z
-          + " ["
-          + edgeFromPolygon[0]
-          + "] "
-          + vertex[1].x
-          + ", "
-          + vertex[1].y
-          + ", "
-          + vertex[1].z
-          + " ["
-          + edgeFromPolygon[1]
-          + "] "
-          + vertex[2].x
-          + ", "
-          + vertex[2].y
-          + ", "
-          + vertex[2].z
-          + " ["
-          + edgeFromPolygon[2]
-          + "]";
-      return result;
+      BiFunction<Node, Boolean, String> vertexStr = (p, e) -> "" + p.x + ", " + p.y + ", " + p.z + "[" + e + "]";
+      return vertexStr.apply(vertex[0], edgeFromPolygon[0])
+          + vertexStr.apply(vertex[1], edgeFromPolygon[1])
+          + vertexStr.apply(vertex[2], edgeFromPolygon[2]);
     }
   }
 }
