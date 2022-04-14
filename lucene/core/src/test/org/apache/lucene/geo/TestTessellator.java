@@ -54,6 +54,13 @@ public class TestTessellator extends LuceneTestCase {
             rect.maxLat));
   }
 
+  public void testTesselateTriangle() {
+    Polygon poly = new Polygon(
+        new double[]{0.0, 2.0, 0.0, 0.0},
+        new double[]{1.0, 0.0, -1.0, 1.0});
+    assertEquals(1, Tessellator.tessellate(poly, random().nextBoolean()).size());
+  }
+
   public void testSimpleTessellation() throws Exception {
     Polygon poly = GeoTestUtil.createRegularPolygon(0.0, 0.0, 100000, 100000);
     Polygon inner =

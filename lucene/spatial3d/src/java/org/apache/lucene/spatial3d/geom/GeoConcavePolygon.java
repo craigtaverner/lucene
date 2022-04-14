@@ -464,6 +464,11 @@ class GeoConcavePolygon extends GeoBasePolygon {
     return false;
   }
 
+  @Override
+  public List<GeoPoint> getOuterShellPoints() {
+    return this.points;
+  }
+
   /** A membership implementation representing polygon edges that must apply. */
   protected static class EitherBound implements Membership {
 

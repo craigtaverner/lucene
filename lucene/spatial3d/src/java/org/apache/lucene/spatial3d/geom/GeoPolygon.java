@@ -16,9 +16,13 @@
  */
 package org.apache.lucene.spatial3d.geom;
 
+import java.util.List;
+
 /**
  * GeoPolygon interface description.
  *
  * @lucene.experimental
  */
-public interface GeoPolygon extends GeoAreaShape {}
+public interface GeoPolygon extends GeoAreaShape {
+  List<GeoPoint> getOuterShellPoints();
+}

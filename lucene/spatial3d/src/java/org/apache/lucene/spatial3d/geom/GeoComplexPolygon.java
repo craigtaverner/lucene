@@ -909,6 +909,16 @@ class GeoComplexPolygon extends GeoBasePolygon {
 
   private static final double[] halfProportions = new double[] {0.5};
 
+  @Override
+  public List<GeoPoint> getOuterShellPoints() {
+    // TODO: Would it be easier to stream over the lists to reduce object creation?
+    ArrayList<GeoPoint> points = new ArrayList<>();
+    for (List<GeoPoint> somePoints : this.pointsList) {
+      points.addAll(somePoints);
+    }
+    return points;
+  }
+
   /**
    * An instance of this class describes a single edge, and includes what is necessary to reliably
    * determine intersection in the context of the even/odd algorithm used.

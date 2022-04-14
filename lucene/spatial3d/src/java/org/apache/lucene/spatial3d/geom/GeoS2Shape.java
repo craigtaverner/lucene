@@ -20,6 +20,8 @@ package org.apache.lucene.spatial3d.geom;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Fast implementation of a polygon representing S2 geometry cell. There are no checks validating
@@ -222,5 +224,15 @@ class GeoS2Shape extends GeoBasePolygon {
         + ", point4="
         + point4
         + "}";
+  }
+
+  @Override
+  public List<GeoPoint> getOuterShellPoints() {
+    ArrayList<GeoPoint> points = new ArrayList<>();
+    points.add(point1);
+    points.add(point2);
+    points.add(point3);
+    points.add(point4);
+    return points;
   }
 }

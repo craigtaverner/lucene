@@ -18,6 +18,7 @@ package org.apache.lucene.spatial3d.geom;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 
 /**
  * GeoCompositePolygon is a specific implementation of GeoCompositeAreaShape, which implements
@@ -54,5 +55,11 @@ public class GeoCompositePolygon extends GeoBaseCompositeAreaShape<GeoPolygon>
   @Override
   public String toString() {
     return "GeoCompositePolygon: {" + shapes + '}';
+  }
+
+  @Override
+  public List<GeoPoint> getOuterShellPoints() {
+    // TODO: How to merged multiple outer shells
+    return this.getShape(0).getOuterShellPoints();
   }
 }

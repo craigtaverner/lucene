@@ -114,8 +114,8 @@ public class TestGeoPolygon extends LuceneTestCase {
     List<GeoPoint> points;
     List<GeoPolygonFactory.PolygonDescription> shapes;
 
-    // Points go counterclockwise, so
-    points = new ArrayList<GeoPoint>();
+    // Points go clockwise, so the inside is the rest of the planet
+    points = new ArrayList<>();
     points.add(new GeoPoint(PlanetModel.SPHERE, -0.1, -0.5));
     points.add(new GeoPoint(PlanetModel.SPHERE, 0.0, -0.6));
     points.add(new GeoPoint(PlanetModel.SPHERE, 0.1, -0.5));
@@ -135,8 +135,8 @@ public class TestGeoPolygon extends LuceneTestCase {
     c = GeoPolygonFactory.makeLargeGeoPolygon(PlanetModel.SPHERE, shapes);
     assertTrue(!c.isWithin(gp));
 
-    // Now, go clockwise
-    points = new ArrayList<GeoPoint>();
+    // Now, go counter-clockwise, so the inside is the small, contained area
+    points = new ArrayList<>();
     points.add(new GeoPoint(PlanetModel.SPHERE, 0.0, -0.4));
     points.add(new GeoPoint(PlanetModel.SPHERE, 0.1, -0.5));
     points.add(new GeoPoint(PlanetModel.SPHERE, 0.0, -0.6));
