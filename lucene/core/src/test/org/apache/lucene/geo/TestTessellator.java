@@ -20,7 +20,11 @@ import static org.apache.lucene.tests.geo.GeoTestUtil.nextBoxNotCrossingDateline
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
+import java.sql.Time;
 import java.text.ParseException;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.Date;
 import java.util.List;
 import org.apache.lucene.tests.geo.GeoTestUtil;
 import org.apache.lucene.tests.util.LuceneTestCase;
@@ -889,6 +893,87 @@ public class TestTessellator extends LuceneTestCase {
         "Expected specific error depending on checkSelfIntersections=" + checkSelfIntersections,
         error,
         ex.getMessage());
+  }
+
+  public void testComplexPolygon53() throws Exception {
+    String wkt = """
+        POLYGON ((8.8970989818779 54.4134906575883, 8.90042774485873 54.4146874897743,8.90594809529893 54.4171621281855,
+        8.91004327482905 54.4202335124536, 8.90936000005425 54.4216600000818, 8.9234299997357 54.4292900002006,
+        8.8925999997461 54.4125699999037, 8.88701999937444 54.4128200006828, 8.88024999984759 54.4117399999775,
+        8.87049000011837 54.407389999926, 8.85725999978773 54.4065399997888, 8.8324600004316 54.4108700007071,
+        8.83028999859022 54.4107799999813, 8.83010999956348 54.4097399998029, 8.83542087096422 54.4081201758963,
+        8.8434158599249 54.4059310703591, 8.8498879933749 54.4038371457592, 8.85426620240666 54.4029805394939,
+        8.85731191163137 54.4032660762063, 8.86483100908713 54.4043130389967, 8.87230838608615 54.4060266046257,
+        8.88148723601366 54.4091671397265, 8.88577026584612 54.4101189229804, 8.89195686439317 54.4116417778086,
+        8.8970989818779 54.4134906575883))""";
+    Polygon polygon = (Polygon) SimpleWKTShapeParser.parse(wkt);
+    List<Tessellator.Triangle> tessellation =
+        Tessellator.tessellate(polygon, random().nextBoolean());
+    assertEquals(area(polygon), area(tessellation), 1e-11);
+    for (Tessellator.Triangle t : tessellation) {
+      checkTriangleEdgesFromPolygon(polygon, t);
+    }
+  }
+
+  public void testComplexPolygon54() throws Exception {
+    String wkt = """
+        POLYGON ((7.89437024403906 47.5862590252318, 7.89312177803361 47.5869704801294,
+        7.89281574806746 47.5870946189537, 7.89525097569983 47.5857177586665, 7.89806367361792 47.5841274339808,
+        7.90068804512661 47.5825559862467, 7.89998956367071 47.5830121477752, 7.89515885167079 47.585809621127,
+        7.89437024403906 47.5862590252318))""";
+    Polygon polygon = (Polygon) SimpleWKTShapeParser.parse(wkt);
+    List<Tessellator.Triangle> tessellation =
+        Tessellator.tessellate(polygon, random().nextBoolean());
+    assertEquals(area(polygon), area(tessellation), 1e-11);
+    for (Tessellator.Triangle t : tessellation) {
+      checkTriangleEdgesFromPolygon(polygon, t);
+    }
+  }
+
+  public void testComplexPolygon55() throws Exception {
+    String wkt = """
+        POLYGON ((11.0774300000168 54.2984399992536, 11.0827805841396 54.2829539912519,
+        11.0830386027471 54.2818703102967, 11.0832788032709 54.2797565892852, 11.0832799998269 54.2798199998029,
+        11.0830099985918 54.2822900002149, 11.0774300000168 54.2984399992536))""";
+    Polygon polygon = (Polygon) SimpleWKTShapeParser.parse(wkt);
+    List<Tessellator.Triangle> tessellation =
+        Tessellator.tessellate(polygon, random().nextBoolean());
+    assertEquals(area(polygon), area(tessellation), 1e-11);
+    for (Tessellator.Triangle t : tessellation) {
+      checkTriangleEdgesFromPolygon(polygon, t);
+    }
+  }
+
+  public void testComplexPolygon56() throws Exception {
+    Date time = Time.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+    System.out.println(time + ": Starting load of big polygon");
+    String wkt = GeoTestUtil.readShape("FE-24544446.wkt.gz");
+    time = Time.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+    System.out.println(time + ": Parsing WKT");
+    Polygon[] polygons = (Polygon[]) SimpleWKTShapeParser.parse(wkt);
+    time = Time.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+    System.out.println(time + ": Triangulating " + polygons.length + " polygons");
+    Duration total = Duration.ofNanos(0);
+    for (int index = polygons.length - 1; index >= 0; index--) {
+      Polygon polygon = polygons[index];
+      int pointCount = polygon.numPoints();
+      time = Time.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+      System.out.println(time + ": Triangulating polygon[" + index + "] of " + pointCount + " points");
+      Date start = time;
+      List<Tessellator.Triangle> tessellation = Tessellator.tessellate(polygon, true);
+      time = Time.from(Instant.ofEpochMilli(System.currentTimeMillis()));
+      Duration duration = Duration.between(time.toInstant(), start.toInstant());
+      System.out.println(time + ": Triangulation took " + duration);
+      total = Duration.ofSeconds(total.getSeconds() + duration.getSeconds());
+
+      System.out.println(time + ": Testing " + tessellation.size() + " triangles");
+      // calculate the area of big polygons have numerical error
+      assertEquals(area(polygon), area(tessellation), 1e-9);
+      for (Tessellator.Triangle t : tessellation) {
+        checkTriangleEdgesFromPolygon(polygon, t);
+      }
+    }
+    System.out.println("Total triangulation of " + polygons.length + " took " + total);
   }
 
   private static class TestCountingMonitor implements Tessellator.Monitor {
